@@ -10,10 +10,10 @@ from telegram.ext import (
     filters,
 )
 import datetime
-from dataclasses import dataclass
 from datetime import timedelta
 from iex_cloud_api import IEXCloudAPI, IEXCloudAPIError
-from typing import Optional, Tuple
+from stock_data import StockData
+from utils import calculate_movements, format_ticker_message
 
 load_dotenv()
 
@@ -23,58 +23,6 @@ logging.basicConfig(
 )
 
 iex_cloud_api = IEXCloudAPI(os.getenv("IEX_CLOUD_TOKEN", ""))
-
-
-@dataclass
-class StockData:
-    amount: float
-    buy_price: float
-    last_price: Optional[float]
-
-
-def calculate_movements(
-    prev_data: StockData, current_price: float
-) -> Tuple[Optional[float], Optional[float], float, float]:
-    prev_price = prev_data.last_price
-    day_movement = None
-    day_movement_pct = None
-
-    if prev_price:
-        # calculate day price movement
-        day_movement = round(current_price - prev_price, 2)
-        day_movement_pct = round((day_movement / prev_price) * 100, 2)
-
-        # make sure the percentage has a correct sign
-        if day_movement < 0:
-            day_movement_pct = -day_movement_pct
-
-    # calculate total price movement
-    buy_price = prev_data.buy_price
-    total_movement = round((current_price - buy_price) * prev_data.amount, 2)
-    total_movement_pct = round((total_movement / buy_price) * 100, 2)
-
-    return day_movement, day_movement_pct, total_movement, total_movement_pct
-
-
-def format_ticker_message(
-    ticker: str,
-    current_price: float,
-    day_movement: Optional[float],
-    day_movement_pct: Optional[float],
-    total_movement: float,
-    total_movement_pct: float,
-) -> str:
-    message = f"*{ticker}*: ${current_price}"
-    if day_movement is not None and day_movement_pct is not None:
-        message += " D:(${:+.2f}/{:+.2f}%)".format(
-            day_movement, day_movement_pct
-        )
-
-    message += " T:(${:+.2f}/{:+.2f}%)".format(
-        total_movement, total_movement_pct
-    )
-
-    return message
 
 
 async def send_stonks_update(context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -261,20 +209,12 @@ async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
 if __name__ == "__main__":
     application = ApplicationBuilder().token(os.getenv("TOKEN", "")).build()
 
-    start_handler = CommandHandler("start", start)
-    track_handler = CommandHandler("track", track_stonks)
-    portfolio_handler = CommandHandler("portfolio", show_portfolio)
-    notify_handler = CommandHandler("notify", notify)
-    disable_handler = CommandHandler("disable", disable)
-    status_handler = CommandHandler("status", status)
-
-    application.add_handler(start_handler)
-    application.add_handler(track_handler)
-    application.add_handler(portfolio_handler)
-    application.add_handler(notify_handler)
-    application.add_handler(disable_handler)
-    application.add_handler(status_handler)
-    unknown_handler = MessageHandler(filters.COMMAND, unknown)
-    application.add_handler(unknown_handler)
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("track", track_stonks))
+    application.add_handler(CommandHandler("portfolio", show_portfolio))
+    application.add_handler(CommandHandler("notify", notify))
+    application.add_handler(CommandHandler("disable", disable))
+    application.add_handler(CommandHandler("status", status))
+    application.add_handler(MessageHandler(filters.COMMAND, unknown))
 
     application.run_polling()
