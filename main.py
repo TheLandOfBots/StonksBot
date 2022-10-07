@@ -11,24 +11,19 @@ from telegram.ext import (
 )
 import datetime
 from datetime import timedelta
+from bot_application import BotApplication
 from iex_cloud_api import IEXCloudAPI, IEXCloudAPIError
 from stock_data import StockData
 from utils import calculate_movements, format_ticker_message
-
-load_dotenv()
-
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO,
-)
-
-iex_cloud_api = IEXCloudAPI(os.getenv("IEX_CLOUD_TOKEN", ""))
 
 
 async def send_stonks_update(context: ContextTypes.DEFAULT_TYPE) -> None:
     job = context.job
     chat_id = job.chat_id
     portfolio = context.user_data.get("portfolio", {})
+    assert isinstance(
+        context.application, BotApplication
+    ), "Application must be an instance of BotApplication!"
 
     if len(portfolio) == 0:
         await context.bot.send_message(
@@ -40,7 +35,11 @@ async def send_stonks_update(context: ContextTypes.DEFAULT_TYPE) -> None:
     message = ""
     for ticker in portfolio:
         try:
-            current_price = iex_cloud_api.get_stock_price(ticker)
+            current_price = (
+                context.application.iex_cloud_api_client.get_stock_price(
+                    ticker
+                )
+            )
         except IEXCloudAPIError:
             portfolio[ticker].last_price = None
             message += f"*{ticker}*: Failed to retrieve price\n"
@@ -103,6 +102,10 @@ async def track_stonks(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def show_portfolio(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    assert isinstance(
+        context.application, BotApplication
+    ), "Application must be an instance of BotApplication!"
+
     user_data = context.user_data or {}
     portfolio = user_data.get("portfolio", {})
     if len(portfolio) == 0:
@@ -115,7 +118,11 @@ async def show_portfolio(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = ""
     for ticker in portfolio:
         try:
-            current_price = iex_cloud_api.get_stock_price(ticker)
+            current_price = (
+                context.application.iex_cloud_api_client.get_stock_price(
+                    ticker
+                )
+            )
         except IEXCloudAPIError:
             message += f"*{ticker}*: Failed to retrieve price\n"
         else:
@@ -207,7 +214,21 @@ async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 if __name__ == "__main__":
-    application = ApplicationBuilder().token(os.getenv("TOKEN", "")).build()
+    logging.basicConfig(
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        level=logging.INFO,
+    )
+
+    load_dotenv()
+    iex_cloud_api = IEXCloudAPI(os.getenv("IEX_CLOUD_TOKEN", ""))
+    application = (
+        ApplicationBuilder()
+        .application_class(
+            BotApplication, kwargs={"iex_cloud_api_client": iex_cloud_api}
+        )
+        .token(os.getenv("TOKEN", ""))
+        .build()
+    )
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("track", track_stonks))
