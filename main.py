@@ -74,10 +74,16 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def track_stonks(update: Update, context: ContextTypes.DEFAULT_TYPE):
     portfolio = context.user_data.get("portfolio", {})
 
-    # TODO: validate
-    ticker = context.args[0]
-    amount = float(context.args[1])
-    buy_price = float(context.args[2])
+    try:
+        ticker = context.args[0]
+        amount = float(context.args[1])
+        buy_price = float(context.args[2])
+    except (ValueError, IndexError):
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Invalid format, please use /track <STOCK_TICKER> <QUANTITY> <BUY_PRICE> (e.g. /track TSLA 10.5 235.5)",
+        )
+        return
 
     if ticker in portfolio:
         # calculate new state
