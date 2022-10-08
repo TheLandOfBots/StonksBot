@@ -10,7 +10,6 @@ from telegram.ext import (
     filters,
 )
 import datetime
-from datetime import timedelta
 from bot_application import BotApplication
 from iex_cloud_api import IEXCloudAPI, IEXCloudAPIError
 from stock_data import StockData
@@ -151,15 +150,11 @@ async def show_portfolio(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def notify(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_message.chat_id
-
-    # -2 hours
-    # premarket_time = datetime.time(hour=17, minute=51)
-    # aftermarket_time = datetime.time(15, 56, 00)
-
-    premarket_time = (datetime.datetime.utcnow() + timedelta(seconds=5)).time()
-    aftermarket_time = (
-        datetime.datetime.utcnow() + timedelta(seconds=10)
-    ).time()
+    print(datetime.datetime.utcnow())
+    # UTC open time 13:30 + 30 min delay
+    premarket_time = datetime.time(hour=14, minute=0)
+    # UTC close time 20:00 + 30 min delay
+    aftermarket_time = datetime.time(hour=20, minute=30)
 
     context.job_queue.run_daily(
         send_stonks_update,
