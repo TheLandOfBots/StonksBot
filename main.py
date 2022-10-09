@@ -7,6 +7,7 @@ from telegram.ext import (
     ContextTypes,
     CommandHandler,
     MessageHandler,
+    PicklePersistence,
     filters,
 )
 import datetime
@@ -156,7 +157,6 @@ async def show_portfolio(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def notify(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_message.chat_id
-    print(datetime.datetime.utcnow())
     # UTC open time 13:30 + 30 min delay
     premarket_time = datetime.time(hour=14, minute=0)
     # UTC close time 20:00 + 30 min delay
@@ -221,6 +221,7 @@ if __name__ == "__main__":
     )
 
     load_dotenv()
+    persistence = PicklePersistence(filepath="stonks_bot_data.pkl")
     iex_cloud_api = IEXCloudAPI(os.getenv("IEX_CLOUD_TOKEN", ""))
     application = (
         ApplicationBuilder()
@@ -228,6 +229,7 @@ if __name__ == "__main__":
             BotApplication, kwargs={"iex_cloud_api_client": iex_cloud_api}
         )
         .token(os.getenv("TOKEN", ""))
+        .persistence(persistence)
         .build()
     )
 
