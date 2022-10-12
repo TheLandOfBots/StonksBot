@@ -1,2 +1,4 @@
 .env
 pyrightconfig.json
+data/*
+!data/.keep

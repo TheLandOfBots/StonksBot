@@ -221,7 +221,7 @@ if __name__ == "__main__":
     )
 
     load_dotenv()
-    persistence = PicklePersistence(filepath="stonks_bot_data.pkl")
+    persistence = PicklePersistence(filepath="./data/stonks_bot_data.pkl")
     iex_cloud_api = IEXCloudAPI(os.getenv("IEX_CLOUD_TOKEN", ""))
     application = (
         ApplicationBuilder()
