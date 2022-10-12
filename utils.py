@@ -20,8 +20,9 @@ def calculate_movements(
 
     # calculate total price movement
     buy_price = prev_data.buy_price
-    total_movement = round((current_price - buy_price) * prev_data.amount, 2)
-    total_movement_pct = round((total_movement / buy_price) * 100, 2)
+    movement = current_price - buy_price
+    total_movement = round(movement * prev_data.amount, 2)
+    total_movement_pct = round((movement / buy_price) * 100, 2)
 
     return day_movement, day_movement_pct, total_movement, total_movement_pct
 
