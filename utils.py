@@ -14,10 +14,6 @@ def calculate_movements(
         day_movement = round(current_price - prev_price, 2)
         day_movement_pct = round((day_movement / prev_price) * 100, 2)
 
-        # make sure the percentage has a correct sign
-        if day_movement < 0:
-            day_movement_pct = -day_movement_pct
-
     # calculate total price movement
     buy_price = prev_data.buy_price
     movement = current_price - buy_price
